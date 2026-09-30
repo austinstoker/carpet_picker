@@ -1,0 +1,1633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mohawk Natural Treasure - Color Wheel</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #1a1a1a;
+    color: #eee;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+  h1 { margin: 20px 0 10px; font-weight: 500; font-size: 1.6rem; text-align: center; }
+  .subtitle { color: #aaa; margin-bottom: 30px; text-align: center; font-size: 0.95rem; }
+  .wheel-container {
+    position: relative;
+    width: min(90vw, 900px);
+    height: min(90vw, 900px);
+    margin: 20px auto;
+  }
+  .wheel-bg {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, hsl(0,80%,50%), hsl(30,80%,50%), hsl(60,80%,50%), hsl(90,80%,50%), hsl(120,80%,50%), hsl(150,80%,50%), hsl(180,80%,50%), hsl(210,80%,50%), hsl(240,80%,50%), hsl(270,80%,50%), hsl(300,80%,50%), hsl(330,80%,50%), hsl(360,80%,50%));
+    opacity: 0.25;
+    z-index: 0;
+  }
+  .center-circle {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 18%; height: 18%;
+    border-radius: 50%;
+    background: #222;
+    border: 2px solid #444;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: #888;
+    text-align: center;
+    padding: 8px;
+  }
+  .swatch {
+    position: absolute;
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    cursor: pointer;
+    transition: transform 0.2s, z-index 0.2s;
+    z-index: 2;
+    transform: translate(-50%, -50%);
+  }
+  .swatch:hover {
+    transform: translate(-50%, -50%) scale(1.35);
+    z-index: 10;
+  }
+  .swatch img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .swatch .label {
+    position: absolute;
+    bottom: -28px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-size: 0.65rem;
+    background: rgba(0,0,0,0.85);
+    padding: 2px 6px;
+    border-radius: 4px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .swatch:hover .label { opacity: 1; }
+  .legend {
+    max-width: 900px;
+    margin-top: 40px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+    width: 100%;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #2a2a2a;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+  }
+  .legend-swatch {
+    width: 40px; height: 40px;
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 1px solid #444;
+  }
+  .legend-swatch img { width: 100%; height: 100%; object-fit: cover; }
+  .legend-info { flex: 1; min-width: 0; }
+  .legend-name { font-weight: 500; }
+  .legend-meta { color: #999; font-size: 0.75rem; margin-top: 2px; }
+
+  .table-section {
+    margin-top: 50px;
+    width: 100%;
+    max-width: 1100px;
+    overflow-x: auto;
+  }
+  .table-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .table-controls h2 { margin: 0; font-size: 1.25rem; }
+  .table-controls .hint { font-size: 0.8rem; color: #888; font-weight: 400; }
+  .toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    background: #2a2a2a;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+  }
+  .toggle-wrap label { cursor: pointer; user-select: none; }
+  .toggle {
+    position: relative;
+    width: 42px; height: 24px;
+    background: #444;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle::after {
+    content: "";
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 18px; height: 18px;
+    background: #ccc;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .toggle.on { background: #4a8; }
+  .toggle.on::after { transform: translateX(18px); background: #fff; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #333; }
+  th {
+    background: #2a2a2a;
+    position: sticky;
+    top: 0;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    z-index: 5;
+  }
+  th:hover { background: #3a3a3a; }
+  th .sort-indicator { display: inline-block; margin-left: 6px; opacity: 0.4; font-size: 0.75rem; }
+  th.sorted-asc .sort-indicator, th.sorted-desc .sort-indicator { opacity: 1; }
+  th.sorted-asc .sort-indicator::after { content: "▲"; }
+  th.sorted-desc .sort-indicator::after { content: "▼"; }
+  th:not(.sorted-asc):not(.sorted-desc) .sort-indicator::after { content: "⇅"; }
+  .color-chip {
+    display: inline-block;
+    width: 24px; height: 24px;
+    border-radius: 4px;
+    vertical-align: middle;
+    margin-right: 8px;
+    border: 1px solid #555;
+  }
+  a { color: #7ab; }
+  tr:hover td { background: #252525; }
+
+  body.image-mode .table-section { max-width: none; width: 100%; }
+  body.image-mode table { border-collapse: collapse; }
+  body.image-mode th, body.image-mode td {
+    padding: 0 !important;
+    border: none !important;
+    vertical-align: middle;
+  }
+  body.image-mode thead { display: none; }
+  body.image-mode tbody { display: flex; flex-wrap: wrap; }
+  body.image-mode tr {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: auto;
+    flex-shrink: 0;
+  }
+  body.image-mode td { display: none; }
+  body.image-mode td.image-cell {
+    display: block;
+    width: 4in;
+    max-width: 384px;
+  }
+  body.image-mode td.image-cell img {
+    width: 100%;
+    height: 4in;
+    max-height: 384px;
+    object-fit: cover;
+    display: block;
+  }
+  body.image-mode td.name-cell {
+    display: flex !important;
+    align-items: center;
+    width: 110px;
+    min-width: 110px;
+    padding: 0 10px !important;
+    font-size: 0.8rem;
+    line-height: 1.25;
+    color: #ddd;
+    background: #1a1a1a;
+    white-space: normal;
+    word-break: break-word;
+  }
+  body.image-mode .link-cell,
+  body.image-mode .rgb-cell,
+  body.image-mode .hex-cell,
+  body.image-mode .hue-cell,
+  body.image-mode .sat-cell {
+    display: none !important;
+  }
+
+  /* Dual comparison – no gap, hidden scrollbars */
+  .compare-section {
+    margin-top: 60px;
+    width: 100%;
+    max-width: 900px;
+  }
+  .compare-section h2 { font-size: 1.25rem; margin-bottom: 8px; }
+  .compare-hint { color: #888; font-size: 0.85rem; margin-bottom: 16px; }
+  .compare-pair {
+    display: flex;
+    gap: 0;
+    height: 70vh;
+    min-height: 400px;
+  }
+  .compare-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #1a1a1a;
+    overflow: hidden;
+  }
+  .compare-panel-header {
+    padding: 10px 14px;
+    background: #2a2a2a;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-bottom: 1px solid #333;
+    flex-shrink: 0;
+  }
+  .compare-scroll {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .compare-scroll::-webkit-scrollbar { display: none; }
+  .compare-row {
+    display: flex;
+    align-items: center;
+  }
+  .compare-img {
+    width: 140px;
+    height: 140px;
+    object-fit: cover;
+    flex-shrink: 0;
+    display: block;
+  }
+  .compare-name {
+    padding: 0 10px;
+    font-size: 0.78rem;
+    line-height: 1.3;
+    color: #ddd;
+    flex: 1;
+    min-width: 0;
+  }
+  .compare-panel.left .compare-row { flex-direction: row; }
+  .compare-panel.right .compare-row { flex-direction: row-reverse; }
+  .compare-spacer { height: 55vh; flex-shrink: 0; }
+</style>
+</head>
+<body>
+  <h1>Mohawk Natural Treasure Color Wheel</h1>
+  <p class="subtitle">40 variants arranged by average hue · Radius reflects saturation (low-sat closer to center)</p>
+
+  <div class="wheel-container" id="wheel">
+    <div class="wheel-bg"></div>
+    <div class="center-circle">Neutral<br>Center</div>
+    <div class="swatch" style="left:71.91%; top:32.06%;" title="Antique Ivory — #ece2cf">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_723.jpg?v=1781310562&width=800" alt="Antique Ivory" loading="lazy">
+      <span class="label">Antique Ivory</span>
+    </div>
+    <div class="swatch" style="left:77.85%; top:28.76%;" title="Beach Pebble — #decdb1">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_741.jpg?v=1781310564&width=800" alt="Beach Pebble" loading="lazy">
+      <span class="label">Beach Pebble</span>
+    </div>
+    <div class="swatch" style="left:45.36%; top:29.65%;" title="Breezeway — #c8cdc6">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_526.jpg?v=1781310562&width=800" alt="Breezeway" loading="lazy">
+      <span class="label">Breezeway</span>
+    </div>
+    <div class="swatch" style="left:36.33%; top:34.82%;" title="Brookside — #a8ada9">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_541.jpg?v=1781310564&width=800" alt="Brookside" loading="lazy">
+      <span class="label">Brookside</span>
+    </div>
+    <div class="swatch" style="left:82.06%; top:28.70%;" title="Brushed Suede — #cdb79b">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_771.jpg?v=1781310562&width=800" alt="Brushed Suede" loading="lazy">
+      <span class="label">Brushed Suede</span>
+    </div>
+    <div class="swatch" style="left:84.06%; top:33.45%;" title="Cat-Tail — #baa18e">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_853.jpg?v=1781310564&width=800" alt="Cat-Tail" loading="lazy">
+      <span class="label">Cat-Tail</span>
+    </div>
+    <div class="swatch" style="left:75.82%; top:41.79%;" title="Deep Slate — #9d918c">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_976.jpg?v=1781310562&width=800" alt="Deep Slate" loading="lazy">
+      <span class="label">Deep Slate</span>
+    </div>
+    <div class="swatch" style="left:77.21%; top:35.83%;" title="Dried Peat — #9f9287">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_869.jpg?v=1781310564&width=800" alt="Dried Peat" loading="lazy">
+      <span class="label">Dried Peat</span>
+    </div>
+    <div class="swatch" style="left:74.08%; top:37.91%;" title="Evening Shadow — #a99f97">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_955.jpg?v=1781310563&width=800" alt="Evening Shadow" loading="lazy">
+      <span class="label">Evening Shadow</span>
+    </div>
+    <div class="swatch" style="left:66.81%; top:29.59%;" title="Garden Club — #bdbaaa">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_635.jpg?v=1781310563&width=800" alt="Garden Club" loading="lazy">
+      <span class="label">Garden Club</span>
+    </div>
+    <div class="swatch" style="left:82.86%; top:29.59%;" title="Glazed Ginger — #c7b096">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_781.jpg?v=1781310562&width=800" alt="Glazed Ginger" loading="lazy">
+      <span class="label">Glazed Ginger</span>
+    </div>
+    <div class="swatch" style="left:77.31%; top:30.39%;" title="Hearth Beige — #c7b8a2">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_776.jpg?v=1781310564&width=800" alt="Hearth Beige" loading="lazy">
+      <span class="label">Hearth Beige</span>
+    </div>
+    <div class="swatch" style="left:79.69%; top:31.00%;" title="Maple Tint — #e0cbb2">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_753.jpg?v=1781310564&width=800" alt="Maple Tint" loading="lazy">
+      <span class="label">Maple Tint</span>
+    </div>
+    <div class="swatch" style="left:72.85%; top:36.04%;" title="Mineral Grey — #c9bfb4">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_931.jpg?v=1781310564&width=800" alt="Mineral Grey" loading="lazy">
+      <span class="label">Mineral Grey</span>
+    </div>
+    <div class="swatch" style="left:68.61%; top:32.74%;" title="Moonbeam — #efe9da">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_711.jpg?v=1781310570&width=800" alt="Moonbeam" loading="lazy">
+      <span class="label">Moonbeam</span>
+    </div>
+    <div class="swatch" style="left:70.82%; top:32.03%;" title="Morning Mist — #ddd5c4">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_746.jpg?v=1781310563&width=800" alt="Morning Mist" loading="lazy">
+      <span class="label">Morning Mist</span>
+    </div>
+    <div class="swatch" style="left:77.58%; top:30.69%;" title="Mushroom Cap — #c1b29d">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_786.jpg?v=1781310563&width=800" alt="Mushroom Cap" loading="lazy">
+      <span class="label">Mushroom Cap</span>
+    </div>
+    <div class="swatch" style="left:78.64%; top:31.05%;" title="Natural Grain — #ddcab2">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_761.jpg?v=1781310564&width=800" alt="Natural Grain" loading="lazy">
+      <span class="label">Natural Grain</span>
+    </div>
+    <div class="swatch" style="left:42.56%; top:70.45%;" title="Nautical — #818086">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_573.jpg?v=1781310563&width=800" alt="Nautical" loading="lazy">
+      <span class="label">Nautical</span>
+    </div>
+    <div class="swatch" style="left:81.12%; top:32.03%;" title="Nutmeg — #b29f8c">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_855.jpg?v=1781310562&width=800" alt="Nutmeg" loading="lazy">
+      <span class="label">Nutmeg</span>
+    </div>
+    <div class="swatch" style="left:54.62%; top:29.76%;" title="Ocean Spray — #d3d5ce">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_516.jpg?v=1781310565&width=800" alt="Ocean Spray" loading="lazy">
+      <span class="label">Ocean Spray</span>
+    </div>
+    <div class="swatch" style="left:72.89%; top:33.37%;" title="Overcast — #ccc2b3">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_937.jpg?v=1781310564&width=800" alt="Overcast" loading="lazy">
+      <span class="label">Overcast</span>
+    </div>
+    <div class="swatch" style="left:71.48%; top:30.66%;" title="Parchment — #e7dec9">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_736.jpg?v=1781310564&width=800" alt="Parchment" loading="lazy">
+      <span class="label">Parchment</span>
+    </div>
+    <div class="swatch" style="left:81.98%; top:34.44%;" title="Pine Cone — #b19c8c">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_849.jpg?v=1781310565&width=800" alt="Pine Cone" loading="lazy">
+      <span class="label">Pine Cone</span>
+    </div>
+    <div class="swatch" style="left:71.43%; top:30.11%;" title="Pine Needle — #9d9788">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_671.jpg?v=1781310564&width=800" alt="Pine Needle" loading="lazy">
+      <span class="label">Pine Needle</span>
+    </div>
+    <div class="swatch" style="left:79.43%; top:27.04%;" title="Raffia Basket — #d5c3a4">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_767.jpg?v=1781310565&width=800" alt="Raffia Basket" loading="lazy">
+      <span class="label">Raffia Basket</span>
+    </div>
+    <div class="swatch" style="left:67.30%; top:33.95%;" title="Raindrop — #d2cec4">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_915.jpg?v=1781310565&width=800" alt="Raindrop" loading="lazy">
+      <span class="label">Raindrop</span>
+    </div>
+    <div class="swatch" style="left:81.35%; top:33.63%;" title="Rich Earth — #b39f8e">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_848.jpg?v=1781310564&width=800" alt="Rich Earth" loading="lazy">
+      <span class="label">Rich Earth</span>
+    </div>
+    <div class="swatch" style="left:72.48%; top:30.29%;" title="Sand Dollar — #e2d8c2">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_756.jpg?v=1781310564&width=800" alt="Sand Dollar" loading="lazy">
+      <span class="label">Sand Dollar</span>
+    </div>
+    <div class="swatch" style="left:61.11%; top:30.76%;" title="Seascape — #c7c7bd">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_625.jpg?v=1781310563&width=800" alt="Seascape" loading="lazy">
+      <span class="label">Seascape</span>
+    </div>
+    <div class="swatch" style="left:72.98%; top:30.72%;" title="Shoreline — #e7dcc6">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_722.jpg?v=1781310564&width=800" alt="Shoreline" loading="lazy">
+      <span class="label">Shoreline</span>
+    </div>
+    <div class="swatch" style="left:70.56%; top:34.69%;" title="Smokescreen — #c6bfb4">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_935.jpg?v=1781310563&width=800" alt="Smokescreen" loading="lazy">
+      <span class="label">Smokescreen</span>
+    </div>
+    <div class="swatch" style="left:70.46%; top:31.87%;" title="Soft Linen — #eae2d0">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_726.jpg?v=1781310565&width=800" alt="Soft Linen" loading="lazy">
+      <span class="label">Soft Linen</span>
+    </div>
+    <div class="swatch" style="left:80.94%; top:30.60%;" title="Spiced Tea — #c3af98">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_787.jpg?v=1781310564&width=800" alt="Spiced Tea" loading="lazy">
+      <span class="label">Spiced Tea</span>
+    </div>
+    <div class="swatch" style="left:64.65%; top:31.63%;" title="Stone Sculpture — #d6d4c8">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_916.jpg?v=1781310564&width=800" alt="Stone Sculpture" loading="lazy">
+      <span class="label">Stone Sculpture</span>
+    </div>
+    <div class="swatch" style="left:73.95%; top:36.17%;" title="Stormwatch — #aea49a">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_957.jpg?v=1781310565&width=800" alt="Stormwatch" loading="lazy">
+      <span class="label">Stormwatch</span>
+    </div>
+    <div class="swatch" style="left:78.13%; top:29.78%;" title="Toasted Bagel — #d4c3aa">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_777.jpg?v=1781310564&width=800" alt="Toasted Bagel" loading="lazy">
+      <span class="label">Toasted Bagel</span>
+    </div>
+    <div class="swatch" style="left:81.49%; top:29.99%;" title="Urban Taupe — #a1907c">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_789.jpg?v=1781310574&width=800" alt="Urban Taupe" loading="lazy">
+      <span class="label">Urban Taupe</span>
+    </div>
+    <div class="swatch" style="left:32.57%; top:39.94%;" title="Waterfront — #9a9e9c">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_551.jpg?v=1781310564&width=800" alt="Waterfront" loading="lazy">
+      <span class="label">Waterfront</span>
+    </div>
+    <div class="swatch" style="left:73.88%; top:41.31%;" title="Wrought Iron — #88807c">
+      <img src="https://citadelspaces.com/cdn/shop/files/O_28210_991.jpg?v=1781310564&width=800" alt="Wrought Iron" loading="lazy">
+      <span class="label">Wrought Iron</span>
+    </div>
+  </div>
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_723.jpg?v=1781310562&width=800" alt="Antique Ivory"></div>
+      <div class="legend-info">
+        <div class="legend-name">Antique Ivory</div>
+        <div class="legend-meta">Avg RGB(236,226,207) · #ece2cf · Hue 39°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_741.jpg?v=1781310564&width=800" alt="Beach Pebble"></div>
+      <div class="legend-info">
+        <div class="legend-name">Beach Pebble</div>
+        <div class="legend-meta">Avg RGB(222,205,177) · #decdb1 · Hue 37°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_526.jpg?v=1781310562&width=800" alt="Breezeway"></div>
+      <div class="legend-info">
+        <div class="legend-name">Breezeway</div>
+        <div class="legend-meta">Avg RGB(200,205,198) · #c8cdc6 · Hue 103°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_541.jpg?v=1781310564&width=800" alt="Brookside"></div>
+      <div class="legend-info">
+        <div class="legend-name">Brookside</div>
+        <div class="legend-meta">Avg RGB(168,173,169) · #a8ada9 · Hue 132°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_771.jpg?v=1781310562&width=800" alt="Brushed Suede"></div>
+      <div class="legend-info">
+        <div class="legend-name">Brushed Suede</div>
+        <div class="legend-meta">Avg RGB(205,183,155) · #cdb79b · Hue 34°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_853.jpg?v=1781310564&width=800" alt="Cat-Tail"></div>
+      <div class="legend-info">
+        <div class="legend-name">Cat-Tail</div>
+        <div class="legend-meta">Avg RGB(186,161,142) · #baa18e · Hue 26°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_976.jpg?v=1781310562&width=800" alt="Deep Slate"></div>
+      <div class="legend-info">
+        <div class="legend-name">Deep Slate</div>
+        <div class="legend-meta">Avg RGB(157,145,140) · #9d918c · Hue 18°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_869.jpg?v=1781310564&width=800" alt="Dried Peat"></div>
+      <div class="legend-info">
+        <div class="legend-name">Dried Peat</div>
+        <div class="legend-meta">Avg RGB(159,146,135) · #9f9287 · Hue 27°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_955.jpg?v=1781310563&width=800" alt="Evening Shadow"></div>
+      <div class="legend-info">
+        <div class="legend-name">Evening Shadow</div>
+        <div class="legend-meta">Avg RGB(169,159,151) · #a99f97 · Hue 27°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_635.jpg?v=1781310563&width=800" alt="Garden Club"></div>
+      <div class="legend-info">
+        <div class="legend-name">Garden Club</div>
+        <div class="legend-meta">Avg RGB(189,186,170) · #bdbaaa · Hue 51°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_781.jpg?v=1781310562&width=800" alt="Glazed Ginger"></div>
+      <div class="legend-info">
+        <div class="legend-name">Glazed Ginger</div>
+        <div class="legend-meta">Avg RGB(199,176,150) · #c7b096 · Hue 32°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_776.jpg?v=1781310564&width=800" alt="Hearth Beige"></div>
+      <div class="legend-info">
+        <div class="legend-name">Hearth Beige</div>
+        <div class="legend-meta">Avg RGB(199,184,162) · #c7b8a2 · Hue 36°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_753.jpg?v=1781310564&width=800" alt="Maple Tint"></div>
+      <div class="legend-info">
+        <div class="legend-name">Maple Tint</div>
+        <div class="legend-meta">Avg RGB(224,203,178) · #e0cbb2 · Hue 33°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_931.jpg?v=1781310564&width=800" alt="Mineral Grey"></div>
+      <div class="legend-info">
+        <div class="legend-name">Mineral Grey</div>
+        <div class="legend-meta">Avg RGB(201,191,180) · #c9bfb4 · Hue 31°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_711.jpg?v=1781310570&width=800" alt="Moonbeam"></div>
+      <div class="legend-info">
+        <div class="legend-name">Moonbeam</div>
+        <div class="legend-meta">Avg RGB(239,233,218) · #efe9da · Hue 43°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_746.jpg?v=1781310563&width=800" alt="Morning Mist"></div>
+      <div class="legend-info">
+        <div class="legend-name">Morning Mist</div>
+        <div class="legend-meta">Avg RGB(221,213,196) · #ddd5c4 · Hue 41°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_786.jpg?v=1781310563&width=800" alt="Mushroom Cap"></div>
+      <div class="legend-info">
+        <div class="legend-name">Mushroom Cap</div>
+        <div class="legend-meta">Avg RGB(193,178,157) · #c1b29d · Hue 35°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_761.jpg?v=1781310564&width=800" alt="Natural Grain"></div>
+      <div class="legend-info">
+        <div class="legend-name">Natural Grain</div>
+        <div class="legend-meta">Avg RGB(221,202,178) · #ddcab2 · Hue 33°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_573.jpg?v=1781310563&width=800" alt="Nautical"></div>
+      <div class="legend-info">
+        <div class="legend-name">Nautical</div>
+        <div class="legend-meta">Avg RGB(129,128,134) · #818086 · Hue 250°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_855.jpg?v=1781310562&width=800" alt="Nutmeg"></div>
+      <div class="legend-info">
+        <div class="legend-name">Nutmeg</div>
+        <div class="legend-meta">Avg RGB(178,159,140) · #b29f8c · Hue 30°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_516.jpg?v=1781310565&width=800" alt="Ocean Spray"></div>
+      <div class="legend-info">
+        <div class="legend-name">Ocean Spray</div>
+        <div class="legend-meta">Avg RGB(211,213,206) · #d3d5ce · Hue 77°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_937.jpg?v=1781310564&width=800" alt="Overcast"></div>
+      <div class="legend-info">
+        <div class="legend-name">Overcast</div>
+        <div class="legend-meta">Avg RGB(204,194,179) · #ccc2b3 · Hue 36°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_736.jpg?v=1781310564&width=800" alt="Parchment"></div>
+      <div class="legend-info">
+        <div class="legend-name">Parchment</div>
+        <div class="legend-meta">Avg RGB(231,222,201) · #e7dec9 · Hue 42°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_849.jpg?v=1781310565&width=800" alt="Pine Cone"></div>
+      <div class="legend-info">
+        <div class="legend-name">Pine Cone</div>
+        <div class="legend-meta">Avg RGB(177,156,140) · #b19c8c · Hue 26°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_671.jpg?v=1781310564&width=800" alt="Pine Needle"></div>
+      <div class="legend-info">
+        <div class="legend-name">Pine Needle</div>
+        <div class="legend-meta">Avg RGB(157,151,136) · #9d9788 · Hue 43°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_767.jpg?v=1781310565&width=800" alt="Raffia Basket"></div>
+      <div class="legend-info">
+        <div class="legend-name">Raffia Basket</div>
+        <div class="legend-meta">Avg RGB(213,195,164) · #d5c3a4 · Hue 38°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_915.jpg?v=1781310565&width=800" alt="Raindrop"></div>
+      <div class="legend-info">
+        <div class="legend-name">Raindrop</div>
+        <div class="legend-meta">Avg RGB(210,206,196) · #d2cec4 · Hue 43°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_848.jpg?v=1781310564&width=800" alt="Rich Earth"></div>
+      <div class="legend-info">
+        <div class="legend-name">Rich Earth</div>
+        <div class="legend-meta">Avg RGB(179,159,142) · #b39f8e · Hue 28°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_756.jpg?v=1781310564&width=800" alt="Sand Dollar"></div>
+      <div class="legend-info">
+        <div class="legend-name">Sand Dollar</div>
+        <div class="legend-meta">Avg RGB(226,216,194) · #e2d8c2 · Hue 41°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_625.jpg?v=1781310563&width=800" alt="Seascape"></div>
+      <div class="legend-info">
+        <div class="legend-name">Seascape</div>
+        <div class="legend-meta">Avg RGB(199,199,189) · #c7c7bd · Hue 60°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_722.jpg?v=1781310564&width=800" alt="Shoreline"></div>
+      <div class="legend-info">
+        <div class="legend-name">Shoreline</div>
+        <div class="legend-meta">Avg RGB(231,220,198) · #e7dcc6 · Hue 40°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_935.jpg?v=1781310563&width=800" alt="Smokescreen"></div>
+      <div class="legend-info">
+        <div class="legend-name">Smokescreen</div>
+        <div class="legend-meta">Avg RGB(198,191,180) · #c6bfb4 · Hue 37°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_726.jpg?v=1781310565&width=800" alt="Soft Linen"></div>
+      <div class="legend-info">
+        <div class="legend-name">Soft Linen</div>
+        <div class="legend-meta">Avg RGB(234,226,208) · #eae2d0 · Hue 42°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_787.jpg?v=1781310564&width=800" alt="Spiced Tea"></div>
+      <div class="legend-info">
+        <div class="legend-name">Spiced Tea</div>
+        <div class="legend-meta">Avg RGB(195,175,152) · #c3af98 · Hue 32°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_916.jpg?v=1781310564&width=800" alt="Stone Sculpture"></div>
+      <div class="legend-info">
+        <div class="legend-name">Stone Sculpture</div>
+        <div class="legend-meta">Avg RGB(214,212,200) · #d6d4c8 · Hue 51°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_957.jpg?v=1781310565&width=800" alt="Stormwatch"></div>
+      <div class="legend-info">
+        <div class="legend-name">Stormwatch</div>
+        <div class="legend-meta">Avg RGB(174,164,154) · #aea49a · Hue 30°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_777.jpg?v=1781310564&width=800" alt="Toasted Bagel"></div>
+      <div class="legend-info">
+        <div class="legend-name">Toasted Bagel</div>
+        <div class="legend-meta">Avg RGB(212,195,170) · #d4c3aa · Hue 36°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_789.jpg?v=1781310574&width=800" alt="Urban Taupe"></div>
+      <div class="legend-info">
+        <div class="legend-name">Urban Taupe</div>
+        <div class="legend-meta">Avg RGB(161,144,124) · #a1907c · Hue 32°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_551.jpg?v=1781310564&width=800" alt="Waterfront"></div>
+      <div class="legend-info">
+        <div class="legend-name">Waterfront</div>
+        <div class="legend-meta">Avg RGB(154,158,156) · #9a9e9c · Hue 150°</div>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch"><img src="https://citadelspaces.com/cdn/shop/files/O_28210_991.jpg?v=1781310564&width=800" alt="Wrought Iron"></div>
+      <div class="legend-info">
+        <div class="legend-name">Wrought Iron</div>
+        <div class="legend-meta">Avg RGB(136,128,124) · #88807c · Hue 20°</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-section">
+    <div class="table-controls">
+      <h2>Full Variant Table</h2>
+      <span class="hint">(click any column header to sort)</span>
+      <div class="toggle-wrap">
+        <div class="toggle" id="imageToggle" role="switch" aria-checked="false" tabindex="0"></div>
+        <label for="imageToggle">Show large images (4″×4″, no gaps)</label>
+      </div>
+    </div>
+    <table id="variantTable">
+      <thead>
+        <tr>
+          <th data-sort="name" data-type="string">Variant Name <span class="sort-indicator"></span></th>
+          <th data-sort="image" data-type="string">Image <span class="sort-indicator"></span></th>
+          <th data-sort="rgb" data-type="number">Avg RGB <span class="sort-indicator"></span></th>
+          <th data-sort="hex" data-type="string">Hex <span class="sort-indicator"></span></th>
+          <th data-sort="hue" data-type="number">Hue ° <span class="sort-indicator"></span></th>
+          <th data-sort="sat" data-type="number">Sat <span class="sort-indicator"></span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr data-name="Antique Ivory" data-rgb="236226207" data-hex="#ece2cf" data-hue="39.310" data-sat="0.1229">
+          <td class="name-cell">Antique Ivory</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_723.jpg?v=1781310562&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_723.jpg?v=1781310562&width=800" alt="Antique Ivory" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#ece2cf"></span>rgb(236, 226, 207)</td>
+          <td class="hex-cell">#ece2cf</td>
+          <td class="hue-cell">39.3</td>
+          <td class="sat-cell">0.12</td>
+        </tr>
+        <tr data-name="Beach Pebble" data-rgb="222205177" data-hex="#decdb1" data-hue="37.333" data-sat="0.2027">
+          <td class="name-cell">Beach Pebble</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_741.jpg?v=1781310564&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_741.jpg?v=1781310564&width=800" alt="Beach Pebble" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#decdb1"></span>rgb(222, 205, 177)</td>
+          <td class="hex-cell">#decdb1</td>
+          <td class="hue-cell">37.3</td>
+          <td class="sat-cell">0.20</td>
+        </tr>
+        <tr data-name="Breezeway" data-rgb="200205198" data-hex="#c8cdc6" data-hue="102.857" data-sat="0.0341">
+          <td class="name-cell">Breezeway</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_526.jpg?v=1781310562&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_526.jpg?v=1781310562&width=800" alt="Breezeway" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#c8cdc6"></span>rgb(200, 205, 198)</td>
+          <td class="hex-cell">#c8cdc6</td>
+          <td class="hue-cell">102.9</td>
+          <td class="sat-cell">0.03</td>
+        </tr>
+        <tr data-name="Brookside" data-rgb="168173169" data-hex="#a8ada9" data-hue="132.000" data-sat="0.0289">
+          <td class="name-cell">Brookside</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_541.jpg?v=1781310564&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_541.jpg?v=1781310564&width=800" alt="Brookside" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#a8ada9"></span>rgb(168, 173, 169)</td>
+          <td class="hex-cell">#a8ada9</td>
+          <td class="hue-cell">132.0</td>
+          <td class="sat-cell">0.03</td>
+        </tr>
+        <tr data-name="Brushed Suede" data-rgb="205183155" data-hex="#cdb79b" data-hue="33.600" data-sat="0.2439">
+          <td class="name-cell">Brushed Suede</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_771.jpg?v=1781310562&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_771.jpg?v=1781310562&width=800" alt="Brushed Suede" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#cdb79b"></span>rgb(205, 183, 155)</td>
+          <td class="hex-cell">#cdb79b</td>
+          <td class="hue-cell">33.6</td>
+          <td class="sat-cell">0.24</td>
+        </tr>
+        <tr data-name="Cat-Tail" data-rgb="186161142" data-hex="#baa18e" data-hue="25.909" data-sat="0.2366">
+          <td class="name-cell">Cat-Tail</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_853.jpg?v=1781310564&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_853.jpg?v=1781310564&width=800" alt="Cat-Tail" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#baa18e"></span>rgb(186, 161, 142)</td>
+          <td class="hex-cell">#baa18e</td>
+          <td class="hue-cell">25.9</td>
+          <td class="sat-cell">0.24</td>
+        </tr>
+        <tr data-name="Deep Slate" data-rgb="157145140" data-hex="#9d918c" data-hue="17.647" data-sat="0.1083">
+          <td class="name-cell">Deep Slate</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_976.jpg?v=1781310562&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_976.jpg?v=1781310562&width=800" alt="Deep Slate" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#9d918c"></span>rgb(157, 145, 140)</td>
+          <td class="hex-cell">#9d918c</td>
+          <td class="hue-cell">17.6</td>
+          <td class="sat-cell">0.11</td>
+        </tr>
+        <tr data-name="Dried Peat" data-rgb="159146135" data-hex="#9f9287" data-hue="27.500" data-sat="0.1509">
+          <td class="name-cell">Dried Peat</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_869.jpg?v=1781310564&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_869.jpg?v=1781310564&width=800" alt="Dried Peat" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#9f9287"></span>rgb(159, 146, 135)</td>
+          <td class="hex-cell">#9f9287</td>
+          <td class="hue-cell">27.5</td>
+          <td class="sat-cell">0.15</td>
+        </tr>
+        <tr data-name="Evening Shadow" data-rgb="169159151" data-hex="#a99f97" data-hue="26.667" data-sat="0.1065">
+          <td class="name-cell">Evening Shadow</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_955.jpg?v=1781310563&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_955.jpg?v=1781310563&width=800" alt="Evening Shadow" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#a99f97"></span>rgb(169, 159, 151)</td>
+          <td class="hex-cell">#a99f97</td>
+          <td class="hue-cell">26.7</td>
+          <td class="sat-cell">0.11</td>
+        </tr>
+        <tr data-name="Garden Club" data-rgb="189186170" data-hex="#bdbaaa" data-hue="50.526" data-sat="0.1005">
+          <td class="name-cell">Garden Club</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_635.jpg?v=1781310563&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_635.jpg?v=1781310563&width=800" alt="Garden Club" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#bdbaaa"></span>rgb(189, 186, 170)</td>
+          <td class="hex-cell">#bdbaaa</td>
+          <td class="hue-cell">50.5</td>
+          <td class="sat-cell">0.10</td>
+        </tr>
+        <tr data-name="Glazed Ginger" data-rgb="199176150" data-hex="#c7b096" data-hue="31.837" data-sat="0.2462">
+          <td class="name-cell">Glazed Ginger</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_781.jpg?v=1781310562&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_781.jpg?v=1781310562&width=800" alt="Glazed Ginger" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#c7b096"></span>rgb(199, 176, 150)</td>
+          <td class="hex-cell">#c7b096</td>
+          <td class="hue-cell">31.8</td>
+          <td class="sat-cell">0.25</td>
+        </tr>
+        <tr data-name="Hearth Beige" data-rgb="199184162" data-hex="#c7b8a2" data-hue="35.676" data-sat="0.1859">
+          <td class="name-cell">Hearth Beige</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_776.jpg?v=1781310564&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_776.jpg?v=1781310564&width=800" alt="Hearth Beige" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#c7b8a2"></span>rgb(199, 184, 162)</td>
+          <td class="hex-cell">#c7b8a2</td>
+          <td class="hue-cell">35.7</td>
+          <td class="sat-cell">0.19</td>
+        </tr>
+        <tr data-name="Maple Tint" data-rgb="224203178" data-hex="#e0cbb2" data-hue="32.609" data-sat="0.2054">
+          <td class="name-cell">Maple Tint</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_753.jpg?v=1781310564&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_753.jpg?v=1781310564&width=800" alt="Maple Tint" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#e0cbb2"></span>rgb(224, 203, 178)</td>
+          <td class="hex-cell">#e0cbb2</td>
+          <td class="hue-cell">32.6</td>
+          <td class="sat-cell">0.21</td>
+        </tr>
+        <tr data-name="Mineral Grey" data-rgb="201191180" data-hex="#c9bfb4" data-hue="31.429" data-sat="0.1045">
+          <td class="name-cell">Mineral Grey</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_931.jpg?v=1781310564&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_931.jpg?v=1781310564&width=800" alt="Mineral Grey" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#c9bfb4"></span>rgb(201, 191, 180)</td>
+          <td class="hex-cell">#c9bfb4</td>
+          <td class="hue-cell">31.4</td>
+          <td class="sat-cell">0.10</td>
+        </tr>
+        <tr data-name="Moonbeam" data-rgb="239233218" data-hex="#efe9da" data-hue="42.857" data-sat="0.0879">
+          <td class="name-cell">Moonbeam</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_711.jpg?v=1781310570&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_711.jpg?v=1781310570&width=800" alt="Moonbeam" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#efe9da"></span>rgb(239, 233, 218)</td>
+          <td class="hex-cell">#efe9da</td>
+          <td class="hue-cell">42.9</td>
+          <td class="sat-cell">0.09</td>
+        </tr>
+        <tr data-name="Morning Mist" data-rgb="221213196" data-hex="#ddd5c4" data-hue="40.800" data-sat="0.1131">
+          <td class="name-cell">Morning Mist</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_746.jpg?v=1781310563&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_746.jpg?v=1781310563&width=800" alt="Morning Mist" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#ddd5c4"></span>rgb(221, 213, 196)</td>
+          <td class="hex-cell">#ddd5c4</td>
+          <td class="hue-cell">40.8</td>
+          <td class="sat-cell">0.11</td>
+        </tr>
+        <tr data-name="Mushroom Cap" data-rgb="193178157" data-hex="#c1b29d" data-hue="35.000" data-sat="0.1865">
+          <td class="name-cell">Mushroom Cap</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_786.jpg?v=1781310563&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_786.jpg?v=1781310563&width=800" alt="Mushroom Cap" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#c1b29d"></span>rgb(193, 178, 157)</td>
+          <td class="hex-cell">#c1b29d</td>
+          <td class="hue-cell">35.0</td>
+          <td class="sat-cell">0.19</td>
+        </tr>
+        <tr data-name="Natural Grain" data-rgb="221202178" data-hex="#ddcab2" data-hue="33.488" data-sat="0.1946">
+          <td class="name-cell">Natural Grain</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_761.jpg?v=1781310564&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_761.jpg?v=1781310564&width=800" alt="Natural Grain" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#ddcab2"></span>rgb(221, 202, 178)</td>
+          <td class="hex-cell">#ddcab2</td>
+          <td class="hue-cell">33.5</td>
+          <td class="sat-cell">0.19</td>
+        </tr>
+        <tr data-name="Nautical" data-rgb="129128134" data-hex="#818086" data-hue="250.000" data-sat="0.0448">
+          <td class="name-cell">Nautical</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_573.jpg?v=1781310563&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_573.jpg?v=1781310563&width=800" alt="Nautical" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#818086"></span>rgb(129, 128, 134)</td>
+          <td class="hex-cell">#818086</td>
+          <td class="hue-cell">250.0</td>
+          <td class="sat-cell">0.04</td>
+        </tr>
+        <tr data-name="Nutmeg" data-rgb="178159140" data-hex="#b29f8c" data-hue="30.000" data-sat="0.2135">
+          <td class="name-cell">Nutmeg</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_855.jpg?v=1781310562&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_855.jpg?v=1781310562&width=800" alt="Nutmeg" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#b29f8c"></span>rgb(178, 159, 140)</td>
+          <td class="hex-cell">#b29f8c</td>
+          <td class="hue-cell">30.0</td>
+          <td class="sat-cell">0.21</td>
+        </tr>
+        <tr data-name="Ocean Spray" data-rgb="211213206" data-hex="#d3d5ce" data-hue="77.143" data-sat="0.0329">
+          <td class="name-cell">Ocean Spray</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_516.jpg?v=1781310565&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_516.jpg?v=1781310565&width=800" alt="Ocean Spray" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#d3d5ce"></span>rgb(211, 213, 206)</td>
+          <td class="hex-cell">#d3d5ce</td>
+          <td class="hue-cell">77.1</td>
+          <td class="sat-cell">0.03</td>
+        </tr>
+        <tr data-name="Overcast" data-rgb="204194179" data-hex="#ccc2b3" data-hue="36.000" data-sat="0.1225">
+          <td class="name-cell">Overcast</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_937.jpg?v=1781310564&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_937.jpg?v=1781310564&width=800" alt="Overcast" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#ccc2b3"></span>rgb(204, 194, 179)</td>
+          <td class="hex-cell">#ccc2b3</td>
+          <td class="hue-cell">36.0</td>
+          <td class="sat-cell">0.12</td>
+        </tr>
+        <tr data-name="Parchment" data-rgb="231222201" data-hex="#e7dec9" data-hue="42.000" data-sat="0.1299">
+          <td class="name-cell">Parchment</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_736.jpg?v=1781310564&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_736.jpg?v=1781310564&width=800" alt="Parchment" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#e7dec9"></span>rgb(231, 222, 201)</td>
+          <td class="hex-cell">#e7dec9</td>
+          <td class="hue-cell">42.0</td>
+          <td class="sat-cell">0.13</td>
+        </tr>
+        <tr data-name="Pine Cone" data-rgb="177156140" data-hex="#b19c8c" data-hue="25.946" data-sat="0.2090">
+          <td class="name-cell">Pine Cone</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_849.jpg?v=1781310565&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_849.jpg?v=1781310565&width=800" alt="Pine Cone" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#b19c8c"></span>rgb(177, 156, 140)</td>
+          <td class="hex-cell">#b19c8c</td>
+          <td class="hue-cell">25.9</td>
+          <td class="sat-cell">0.21</td>
+        </tr>
+        <tr data-name="Pine Needle" data-rgb="157151136" data-hex="#9d9788" data-hue="42.857" data-sat="0.1338">
+          <td class="name-cell">Pine Needle</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_671.jpg?v=1781310564&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_671.jpg?v=1781310564&width=800" alt="Pine Needle" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#9d9788"></span>rgb(157, 151, 136)</td>
+          <td class="hex-cell">#9d9788</td>
+          <td class="hue-cell">42.9</td>
+          <td class="sat-cell">0.13</td>
+        </tr>
+        <tr data-name="Raffia Basket" data-rgb="213195164" data-hex="#d5c3a4" data-hue="37.959" data-sat="0.2300">
+          <td class="name-cell">Raffia Basket</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_767.jpg?v=1781310565&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_767.jpg?v=1781310565&width=800" alt="Raffia Basket" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#d5c3a4"></span>rgb(213, 195, 164)</td>
+          <td class="hex-cell">#d5c3a4</td>
+          <td class="hue-cell">38.0</td>
+          <td class="sat-cell">0.23</td>
+        </tr>
+        <tr data-name="Raindrop" data-rgb="210206196" data-hex="#d2cec4" data-hue="42.857" data-sat="0.0667">
+          <td class="name-cell">Raindrop</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_915.jpg?v=1781310565&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_915.jpg?v=1781310565&width=800" alt="Raindrop" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#d2cec4"></span>rgb(210, 206, 196)</td>
+          <td class="hex-cell">#d2cec4</td>
+          <td class="hue-cell">42.9</td>
+          <td class="sat-cell">0.07</td>
+        </tr>
+        <tr data-name="Rich Earth" data-rgb="179159142" data-hex="#b39f8e" data-hue="27.568" data-sat="0.2067">
+          <td class="name-cell">Rich Earth</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_848.jpg?v=1781310564&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_848.jpg?v=1781310564&width=800" alt="Rich Earth" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#b39f8e"></span>rgb(179, 159, 142)</td>
+          <td class="hex-cell">#b39f8e</td>
+          <td class="hue-cell">27.6</td>
+          <td class="sat-cell">0.21</td>
+        </tr>
+        <tr data-name="Sand Dollar" data-rgb="226216194" data-hex="#e2d8c2" data-hue="41.250" data-sat="0.1416">
+          <td class="name-cell">Sand Dollar</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_756.jpg?v=1781310564&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_756.jpg?v=1781310564&width=800" alt="Sand Dollar" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#e2d8c2"></span>rgb(226, 216, 194)</td>
+          <td class="hex-cell">#e2d8c2</td>
+          <td class="hue-cell">41.3</td>
+          <td class="sat-cell">0.14</td>
+        </tr>
+        <tr data-name="Seascape" data-rgb="199199189" data-hex="#c7c7bd" data-hue="60.000" data-sat="0.0503">
+          <td class="name-cell">Seascape</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_625.jpg?v=1781310563&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_625.jpg?v=1781310563&width=800" alt="Seascape" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#c7c7bd"></span>rgb(199, 199, 189)</td>
+          <td class="hex-cell">#c7c7bd</td>
+          <td class="hue-cell">60.0</td>
+          <td class="sat-cell">0.05</td>
+        </tr>
+        <tr data-name="Shoreline" data-rgb="231220198" data-hex="#e7dcc6" data-hue="40.000" data-sat="0.1429">
+          <td class="name-cell">Shoreline</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_722.jpg?v=1781310564&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_722.jpg?v=1781310564&width=800" alt="Shoreline" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#e7dcc6"></span>rgb(231, 220, 198)</td>
+          <td class="hex-cell">#e7dcc6</td>
+          <td class="hue-cell">40.0</td>
+          <td class="sat-cell">0.14</td>
+        </tr>
+        <tr data-name="Smokescreen" data-rgb="198191180" data-hex="#c6bfb4" data-hue="36.667" data-sat="0.0909">
+          <td class="name-cell">Smokescreen</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_935.jpg?v=1781310563&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_935.jpg?v=1781310563&width=800" alt="Smokescreen" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#c6bfb4"></span>rgb(198, 191, 180)</td>
+          <td class="hex-cell">#c6bfb4</td>
+          <td class="hue-cell">36.7</td>
+          <td class="sat-cell">0.09</td>
+        </tr>
+        <tr data-name="Soft Linen" data-rgb="234226208" data-hex="#eae2d0" data-hue="41.538" data-sat="0.1111">
+          <td class="name-cell">Soft Linen</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_726.jpg?v=1781310565&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_726.jpg?v=1781310565&width=800" alt="Soft Linen" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#eae2d0"></span>rgb(234, 226, 208)</td>
+          <td class="hex-cell">#eae2d0</td>
+          <td class="hue-cell">41.5</td>
+          <td class="sat-cell">0.11</td>
+        </tr>
+        <tr data-name="Spiced Tea" data-rgb="195175152" data-hex="#c3af98" data-hue="32.093" data-sat="0.2205">
+          <td class="name-cell">Spiced Tea</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_787.jpg?v=1781310564&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_787.jpg?v=1781310564&width=800" alt="Spiced Tea" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#c3af98"></span>rgb(195, 175, 152)</td>
+          <td class="hex-cell">#c3af98</td>
+          <td class="hue-cell">32.1</td>
+          <td class="sat-cell">0.22</td>
+        </tr>
+        <tr data-name="Stone Sculpture" data-rgb="214212200" data-hex="#d6d4c8" data-hue="51.429" data-sat="0.0654">
+          <td class="name-cell">Stone Sculpture</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_916.jpg?v=1781310564&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_916.jpg?v=1781310564&width=800" alt="Stone Sculpture" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#d6d4c8"></span>rgb(214, 212, 200)</td>
+          <td class="hex-cell">#d6d4c8</td>
+          <td class="hue-cell">51.4</td>
+          <td class="sat-cell">0.07</td>
+        </tr>
+        <tr data-name="Stormwatch" data-rgb="174164154" data-hex="#aea49a" data-hue="30.000" data-sat="0.1149">
+          <td class="name-cell">Stormwatch</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_957.jpg?v=1781310565&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_957.jpg?v=1781310565&width=800" alt="Stormwatch" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#aea49a"></span>rgb(174, 164, 154)</td>
+          <td class="hex-cell">#aea49a</td>
+          <td class="hue-cell">30.0</td>
+          <td class="sat-cell">0.11</td>
+        </tr>
+        <tr data-name="Toasted Bagel" data-rgb="212195170" data-hex="#d4c3aa" data-hue="35.714" data-sat="0.1981">
+          <td class="name-cell">Toasted Bagel</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_777.jpg?v=1781310564&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_777.jpg?v=1781310564&width=800" alt="Toasted Bagel" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#d4c3aa"></span>rgb(212, 195, 170)</td>
+          <td class="hex-cell">#d4c3aa</td>
+          <td class="hue-cell">35.7</td>
+          <td class="sat-cell">0.20</td>
+        </tr>
+        <tr data-name="Urban Taupe" data-rgb="161144124" data-hex="#a1907c" data-hue="32.432" data-sat="0.2298">
+          <td class="name-cell">Urban Taupe</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_789.jpg?v=1781310574&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_789.jpg?v=1781310574&width=800" alt="Urban Taupe" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#a1907c"></span>rgb(161, 144, 124)</td>
+          <td class="hex-cell">#a1907c</td>
+          <td class="hue-cell">32.4</td>
+          <td class="sat-cell">0.23</td>
+        </tr>
+        <tr data-name="Waterfront" data-rgb="154158156" data-hex="#9a9e9c" data-hue="150.000" data-sat="0.0253">
+          <td class="name-cell">Waterfront</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_551.jpg?v=1781310564&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_551.jpg?v=1781310564&width=800" alt="Waterfront" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#9a9e9c"></span>rgb(154, 158, 156)</td>
+          <td class="hex-cell">#9a9e9c</td>
+          <td class="hue-cell">150.0</td>
+          <td class="sat-cell">0.03</td>
+        </tr>
+        <tr data-name="Wrought Iron" data-rgb="136128124" data-hex="#88807c" data-hue="20.000" data-sat="0.0882">
+          <td class="name-cell">Wrought Iron</td>
+          <td class="image-cell">
+            <a class="link-cell" href="https://citadelspaces.com/cdn/shop/files/O_28210_991.jpg?v=1781310564&width=800" target="_blank">View image</a>
+            <img src="https://citadelspaces.com/cdn/shop/files/O_28210_991.jpg?v=1781310564&width=800" alt="Wrought Iron" loading="lazy" style="display:none;">
+          </td>
+          <td class="rgb-cell"><span class="color-chip" style="background:#88807c"></span>rgb(136, 128, 124)</td>
+          <td class="hex-cell">#88807c</td>
+          <td class="hue-cell">20.0</td>
+          <td class="sat-cell">0.09</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="compare-section">
+    <h2>Side-by-Side Comparison</h2>
+    <p class="compare-hint">Both lists sorted by hue. Scroll each panel independently with the mouse wheel to line up any two colors. Extra space at the bottom lets you align the last items with earlier ones.</p>
+    <div class="compare-pair">
+      <div class="compare-panel left">
+        <div class="compare-panel-header">← Name | Image &nbsp;·&nbsp; sorted by hue</div>
+        <div class="compare-scroll" id="leftScroll">
+          <div class="compare-row">
+            <div class="compare-name">Deep Slate<br><span style="color:#888;font-size:0.7rem;">Hue 18°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_976.jpg?v=1781310562&width=800" alt="Deep Slate" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Wrought Iron<br><span style="color:#888;font-size:0.7rem;">Hue 20°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_991.jpg?v=1781310564&width=800" alt="Wrought Iron" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Cat-Tail<br><span style="color:#888;font-size:0.7rem;">Hue 26°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_853.jpg?v=1781310564&width=800" alt="Cat-Tail" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Pine Cone<br><span style="color:#888;font-size:0.7rem;">Hue 26°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_849.jpg?v=1781310565&width=800" alt="Pine Cone" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Evening Shadow<br><span style="color:#888;font-size:0.7rem;">Hue 27°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_955.jpg?v=1781310563&width=800" alt="Evening Shadow" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Dried Peat<br><span style="color:#888;font-size:0.7rem;">Hue 27°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_869.jpg?v=1781310564&width=800" alt="Dried Peat" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Rich Earth<br><span style="color:#888;font-size:0.7rem;">Hue 28°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_848.jpg?v=1781310564&width=800" alt="Rich Earth" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Nutmeg<br><span style="color:#888;font-size:0.7rem;">Hue 30°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_855.jpg?v=1781310562&width=800" alt="Nutmeg" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Stormwatch<br><span style="color:#888;font-size:0.7rem;">Hue 30°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_957.jpg?v=1781310565&width=800" alt="Stormwatch" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Mineral Grey<br><span style="color:#888;font-size:0.7rem;">Hue 31°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_931.jpg?v=1781310564&width=800" alt="Mineral Grey" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Glazed Ginger<br><span style="color:#888;font-size:0.7rem;">Hue 32°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_781.jpg?v=1781310562&width=800" alt="Glazed Ginger" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Spiced Tea<br><span style="color:#888;font-size:0.7rem;">Hue 32°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_787.jpg?v=1781310564&width=800" alt="Spiced Tea" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Urban Taupe<br><span style="color:#888;font-size:0.7rem;">Hue 32°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_789.jpg?v=1781310574&width=800" alt="Urban Taupe" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Maple Tint<br><span style="color:#888;font-size:0.7rem;">Hue 33°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_753.jpg?v=1781310564&width=800" alt="Maple Tint" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Natural Grain<br><span style="color:#888;font-size:0.7rem;">Hue 33°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_761.jpg?v=1781310564&width=800" alt="Natural Grain" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Brushed Suede<br><span style="color:#888;font-size:0.7rem;">Hue 34°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_771.jpg?v=1781310562&width=800" alt="Brushed Suede" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Mushroom Cap<br><span style="color:#888;font-size:0.7rem;">Hue 35°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_786.jpg?v=1781310563&width=800" alt="Mushroom Cap" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Hearth Beige<br><span style="color:#888;font-size:0.7rem;">Hue 36°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_776.jpg?v=1781310564&width=800" alt="Hearth Beige" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Toasted Bagel<br><span style="color:#888;font-size:0.7rem;">Hue 36°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_777.jpg?v=1781310564&width=800" alt="Toasted Bagel" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Overcast<br><span style="color:#888;font-size:0.7rem;">Hue 36°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_937.jpg?v=1781310564&width=800" alt="Overcast" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Smokescreen<br><span style="color:#888;font-size:0.7rem;">Hue 37°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_935.jpg?v=1781310563&width=800" alt="Smokescreen" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Beach Pebble<br><span style="color:#888;font-size:0.7rem;">Hue 37°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_741.jpg?v=1781310564&width=800" alt="Beach Pebble" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Raffia Basket<br><span style="color:#888;font-size:0.7rem;">Hue 38°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_767.jpg?v=1781310565&width=800" alt="Raffia Basket" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Antique Ivory<br><span style="color:#888;font-size:0.7rem;">Hue 39°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_723.jpg?v=1781310562&width=800" alt="Antique Ivory" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Shoreline<br><span style="color:#888;font-size:0.7rem;">Hue 40°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_722.jpg?v=1781310564&width=800" alt="Shoreline" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Morning Mist<br><span style="color:#888;font-size:0.7rem;">Hue 41°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_746.jpg?v=1781310563&width=800" alt="Morning Mist" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Sand Dollar<br><span style="color:#888;font-size:0.7rem;">Hue 41°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_756.jpg?v=1781310564&width=800" alt="Sand Dollar" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Soft Linen<br><span style="color:#888;font-size:0.7rem;">Hue 42°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_726.jpg?v=1781310565&width=800" alt="Soft Linen" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Parchment<br><span style="color:#888;font-size:0.7rem;">Hue 42°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_736.jpg?v=1781310564&width=800" alt="Parchment" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Moonbeam<br><span style="color:#888;font-size:0.7rem;">Hue 43°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_711.jpg?v=1781310570&width=800" alt="Moonbeam" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Pine Needle<br><span style="color:#888;font-size:0.7rem;">Hue 43°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_671.jpg?v=1781310564&width=800" alt="Pine Needle" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Raindrop<br><span style="color:#888;font-size:0.7rem;">Hue 43°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_915.jpg?v=1781310565&width=800" alt="Raindrop" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Garden Club<br><span style="color:#888;font-size:0.7rem;">Hue 51°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_635.jpg?v=1781310563&width=800" alt="Garden Club" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Stone Sculpture<br><span style="color:#888;font-size:0.7rem;">Hue 51°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_916.jpg?v=1781310564&width=800" alt="Stone Sculpture" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Seascape<br><span style="color:#888;font-size:0.7rem;">Hue 60°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_625.jpg?v=1781310563&width=800" alt="Seascape" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Ocean Spray<br><span style="color:#888;font-size:0.7rem;">Hue 77°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_516.jpg?v=1781310565&width=800" alt="Ocean Spray" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Breezeway<br><span style="color:#888;font-size:0.7rem;">Hue 103°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_526.jpg?v=1781310562&width=800" alt="Breezeway" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Brookside<br><span style="color:#888;font-size:0.7rem;">Hue 132°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_541.jpg?v=1781310564&width=800" alt="Brookside" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Waterfront<br><span style="color:#888;font-size:0.7rem;">Hue 150°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_551.jpg?v=1781310564&width=800" alt="Waterfront" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Nautical<br><span style="color:#888;font-size:0.7rem;">Hue 250°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_573.jpg?v=1781310563&width=800" alt="Nautical" loading="lazy">
+          </div>
+          <div class="compare-spacer"></div>
+        </div>
+      </div>
+      <div class="compare-panel right">
+        <div class="compare-panel-header">Image | Name → &nbsp;·&nbsp; sorted by hue</div>
+        <div class="compare-scroll" id="rightScroll">
+          <div class="compare-row">
+            <div class="compare-name">Deep Slate<br><span style="color:#888;font-size:0.7rem;">Hue 18°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_976.jpg?v=1781310562&width=800" alt="Deep Slate" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Wrought Iron<br><span style="color:#888;font-size:0.7rem;">Hue 20°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_991.jpg?v=1781310564&width=800" alt="Wrought Iron" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Cat-Tail<br><span style="color:#888;font-size:0.7rem;">Hue 26°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_853.jpg?v=1781310564&width=800" alt="Cat-Tail" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Pine Cone<br><span style="color:#888;font-size:0.7rem;">Hue 26°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_849.jpg?v=1781310565&width=800" alt="Pine Cone" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Evening Shadow<br><span style="color:#888;font-size:0.7rem;">Hue 27°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_955.jpg?v=1781310563&width=800" alt="Evening Shadow" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Dried Peat<br><span style="color:#888;font-size:0.7rem;">Hue 27°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_869.jpg?v=1781310564&width=800" alt="Dried Peat" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Rich Earth<br><span style="color:#888;font-size:0.7rem;">Hue 28°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_848.jpg?v=1781310564&width=800" alt="Rich Earth" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Nutmeg<br><span style="color:#888;font-size:0.7rem;">Hue 30°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_855.jpg?v=1781310562&width=800" alt="Nutmeg" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Stormwatch<br><span style="color:#888;font-size:0.7rem;">Hue 30°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_957.jpg?v=1781310565&width=800" alt="Stormwatch" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Mineral Grey<br><span style="color:#888;font-size:0.7rem;">Hue 31°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_931.jpg?v=1781310564&width=800" alt="Mineral Grey" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Glazed Ginger<br><span style="color:#888;font-size:0.7rem;">Hue 32°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_781.jpg?v=1781310562&width=800" alt="Glazed Ginger" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Spiced Tea<br><span style="color:#888;font-size:0.7rem;">Hue 32°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_787.jpg?v=1781310564&width=800" alt="Spiced Tea" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Urban Taupe<br><span style="color:#888;font-size:0.7rem;">Hue 32°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_789.jpg?v=1781310574&width=800" alt="Urban Taupe" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Maple Tint<br><span style="color:#888;font-size:0.7rem;">Hue 33°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_753.jpg?v=1781310564&width=800" alt="Maple Tint" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Natural Grain<br><span style="color:#888;font-size:0.7rem;">Hue 33°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_761.jpg?v=1781310564&width=800" alt="Natural Grain" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Brushed Suede<br><span style="color:#888;font-size:0.7rem;">Hue 34°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_771.jpg?v=1781310562&width=800" alt="Brushed Suede" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Mushroom Cap<br><span style="color:#888;font-size:0.7rem;">Hue 35°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_786.jpg?v=1781310563&width=800" alt="Mushroom Cap" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Hearth Beige<br><span style="color:#888;font-size:0.7rem;">Hue 36°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_776.jpg?v=1781310564&width=800" alt="Hearth Beige" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Toasted Bagel<br><span style="color:#888;font-size:0.7rem;">Hue 36°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_777.jpg?v=1781310564&width=800" alt="Toasted Bagel" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Overcast<br><span style="color:#888;font-size:0.7rem;">Hue 36°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_937.jpg?v=1781310564&width=800" alt="Overcast" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Smokescreen<br><span style="color:#888;font-size:0.7rem;">Hue 37°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_935.jpg?v=1781310563&width=800" alt="Smokescreen" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Beach Pebble<br><span style="color:#888;font-size:0.7rem;">Hue 37°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_741.jpg?v=1781310564&width=800" alt="Beach Pebble" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Raffia Basket<br><span style="color:#888;font-size:0.7rem;">Hue 38°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_767.jpg?v=1781310565&width=800" alt="Raffia Basket" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Antique Ivory<br><span style="color:#888;font-size:0.7rem;">Hue 39°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_723.jpg?v=1781310562&width=800" alt="Antique Ivory" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Shoreline<br><span style="color:#888;font-size:0.7rem;">Hue 40°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_722.jpg?v=1781310564&width=800" alt="Shoreline" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Morning Mist<br><span style="color:#888;font-size:0.7rem;">Hue 41°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_746.jpg?v=1781310563&width=800" alt="Morning Mist" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Sand Dollar<br><span style="color:#888;font-size:0.7rem;">Hue 41°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_756.jpg?v=1781310564&width=800" alt="Sand Dollar" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Soft Linen<br><span style="color:#888;font-size:0.7rem;">Hue 42°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_726.jpg?v=1781310565&width=800" alt="Soft Linen" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Parchment<br><span style="color:#888;font-size:0.7rem;">Hue 42°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_736.jpg?v=1781310564&width=800" alt="Parchment" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Moonbeam<br><span style="color:#888;font-size:0.7rem;">Hue 43°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_711.jpg?v=1781310570&width=800" alt="Moonbeam" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Pine Needle<br><span style="color:#888;font-size:0.7rem;">Hue 43°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_671.jpg?v=1781310564&width=800" alt="Pine Needle" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Raindrop<br><span style="color:#888;font-size:0.7rem;">Hue 43°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_915.jpg?v=1781310565&width=800" alt="Raindrop" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Garden Club<br><span style="color:#888;font-size:0.7rem;">Hue 51°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_635.jpg?v=1781310563&width=800" alt="Garden Club" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Stone Sculpture<br><span style="color:#888;font-size:0.7rem;">Hue 51°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_916.jpg?v=1781310564&width=800" alt="Stone Sculpture" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Seascape<br><span style="color:#888;font-size:0.7rem;">Hue 60°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_625.jpg?v=1781310563&width=800" alt="Seascape" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Ocean Spray<br><span style="color:#888;font-size:0.7rem;">Hue 77°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_516.jpg?v=1781310565&width=800" alt="Ocean Spray" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Breezeway<br><span style="color:#888;font-size:0.7rem;">Hue 103°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_526.jpg?v=1781310562&width=800" alt="Breezeway" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Brookside<br><span style="color:#888;font-size:0.7rem;">Hue 132°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_541.jpg?v=1781310564&width=800" alt="Brookside" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Waterfront<br><span style="color:#888;font-size:0.7rem;">Hue 150°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_551.jpg?v=1781310564&width=800" alt="Waterfront" loading="lazy">
+          </div>
+          <div class="compare-row">
+            <div class="compare-name">Nautical<br><span style="color:#888;font-size:0.7rem;">Hue 250°</span></div>
+            <img class="compare-img" src="https://citadelspaces.com/cdn/shop/files/O_28210_573.jpg?v=1781310563&width=800" alt="Nautical" loading="lazy">
+          </div>
+          <div class="compare-spacer"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p style="margin-top:40px; color:#666; font-size:0.8rem; text-align:center;">
+    Images sourced from citadelspaces.com · Average colors computed from product swatches · Low-saturation neutrals cluster near center
+  </p>
+
+<script>
+(function() {
+  const table = document.getElementById('variantTable');
+  const headers = table.querySelectorAll('th');
+  let currentSort = { col: null, dir: 'asc' };
+
+  headers.forEach((th) => {
+    th.addEventListener('click', () => {
+      const type = th.dataset.type;
+      const key = th.dataset.sort;
+      const tbody = table.querySelector('tbody');
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+
+      let dir = 'asc';
+      if (currentSort.col === key && currentSort.dir === 'asc') dir = 'desc';
+      currentSort = { col: key, dir };
+
+      headers.forEach(h => h.classList.remove('sorted-asc', 'sorted-desc'));
+      th.classList.add(dir === 'asc' ? 'sorted-asc' : 'sorted-desc');
+
+      rows.sort((a, b) => {
+        let aVal, bVal;
+        if (key === 'name' || key === 'image') {
+          aVal = a.dataset.name.toLowerCase();
+          bVal = b.dataset.name.toLowerCase();
+        } else if (key === 'rgb') {
+          aVal = parseFloat(a.dataset.rgb);
+          bVal = parseFloat(b.dataset.rgb);
+        } else if (key === 'hex') {
+          aVal = a.dataset.hex;
+          bVal = b.dataset.hex;
+        } else if (key === 'hue') {
+          aVal = parseFloat(a.dataset.hue);
+          bVal = parseFloat(b.dataset.hue);
+        } else if (key === 'sat') {
+          aVal = parseFloat(a.dataset.sat);
+          bVal = parseFloat(b.dataset.sat);
+        }
+        if (type === 'number') return dir === 'asc' ? aVal - bVal : bVal - aVal;
+        if (aVal < bVal) return dir === 'asc' ? -1 : 1;
+        if (aVal > bVal) return dir === 'asc' ? 1 : -1;
+        return 0;
+      });
+      rows.forEach(row => tbody.appendChild(row));
+    });
+  });
+
+  const toggle = document.getElementById('imageToggle');
+  const body = document.body;
+
+  function setImageMode(on) {
+    if (on) {
+      body.classList.add('image-mode');
+      toggle.classList.add('on');
+      toggle.setAttribute('aria-checked', 'true');
+      document.querySelectorAll('.image-cell img').forEach(img => img.style.display = 'block');
+      document.querySelectorAll('.image-cell .link-cell').forEach(a => a.style.display = 'none');
+    } else {
+      body.classList.remove('image-mode');
+      toggle.classList.remove('on');
+      toggle.setAttribute('aria-checked', 'false');
+      document.querySelectorAll('.image-cell img').forEach(img => img.style.display = 'none');
+      document.querySelectorAll('.image-cell .link-cell').forEach(a => a.style.display = 'inline');
+    }
+  }
+
+  toggle.addEventListener('click', () => setImageMode(!body.classList.contains('image-mode')));
+  toggle.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setImageMode(!body.classList.contains('image-mode'));
+    }
+  });
+})();
+</script>
+</body>
+</html>
